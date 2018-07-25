@@ -52,6 +52,19 @@
     });
   };
 
+  var port = {
+    getTime: () => Date.now(),
+    getStore: () => {
+      return JSON.parse(w.localStorage.getItem('jakutis-pomodoro') || 'null');
+    },
+    onRender: w.requestAnimationFrame,
+    setStore: (store) => {
+      return w.localStorage.setItem('jakutis-pomodoro', JSON.stringify(store));
+    },
+    getHash: () => unescape(w.location.hash.substr(1)),
+    setHash: hash => w.location.hash = hash
+  };
+
   var domain = {
     startedAt: 0,
     stoppedAt: 0,
@@ -59,26 +72,26 @@
     configuration: null,
 
     initialize: () => {
-      domain.configuration = JSON.parse(unescape(w.location.hash.substr(1)) || JSON.stringify({
+      domain.configuration = JSON.parse(port.getHash() || JSON.stringify({
         duration: 25
       }));
-      w.location.hash = JSON.stringify(domain.configuration);
-      domain.handle.log(domain.getStore().log);
+      port.setHash(JSON.stringify(domain.configuration));
+
+      var store = port.getStore() || {
+        log: []
+      };
+      port.setStore(store);
+
+      domain.handle.log(store.log);
       domain.initializeTimes();
       domain.tick();
       domain.log('initialize');
     },
     handle: {},
-    getStore: () => {
-      return JSON.parse(w.localStorage.getItem('jakutis-pomodoro') || '{"log":[]}');
-    },
-    setStore: (store) => {
-      return w.localStorage.setItem('jakutis-pomodoro', JSON.stringify(store));
-    },
     log: (type, data) => {
-      var store = domain.getStore();
-      store.log.push({ type, time: Date.now(), data });
-      domain.setStore(store);
+      var store = port.getStore();
+      store.log.push({ type, time: port.getTime(), data });
+      port.setStore(store);
       domain.handle.log(store.log);
     },
     tick: () => {
@@ -86,9 +99,9 @@
       if (domain.stoppedAt > 0) {
         currentTime = domain.stoppedAt;
       } else {
-        currentTime = Date.now();
+        currentTime = port.getTime();
         if (currentTime < domain.finishesAt) {
-          requestAnimationFrame(() => domain.tick());
+          port.onRender(() => domain.tick());
         } else {
           domain.complete();
         }
@@ -96,26 +109,26 @@
       domain.handle.text(domain.finishesAt - currentTime);
     },
     start: () => {
-      domain.startedAt = Date.now();
+      domain.startedAt = port.getTime();
       domain.stoppedAt = 0;
-      domain.finishesAt = Date.now() + domain.configuration.duration * 60 * 1000;
+      domain.finishesAt = port.getTime() + domain.configuration.duration * 60 * 1000;
       domain.tick();
       domain.log('start');
     },
     stop: () => {
-      domain.stoppedAt = Date.now();
+      domain.stoppedAt = port.getTime();
       domain.tick();
       domain.log('stop');
     },
     complete: () => {
-      domain.stoppedAt = Date.now();
+      domain.stoppedAt = port.getTime();
       domain.tick();
       domain.log('complete');
     },
     initializeTimes: () => {
       domain.startedAt = 0;
-      domain.stoppedAt = Date.now();
-      domain.finishesAt = Date.now() + domain.configuration.duration * 60 * 1000;
+      domain.stoppedAt = port.getTime();
+      domain.finishesAt = port.getTime() + domain.configuration.duration * 60 * 1000;
     },
     reset: () => {
       domain.initializeTimes();
