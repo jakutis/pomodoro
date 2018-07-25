@@ -18,7 +18,12 @@ License: MIT
 
       log: (type, description) => {
         var store = port.getStore();
-        store.log.push({ id: private.id, type, time: Date.now(), description });
+        store.log.push({
+          id: private.id,
+          type,
+          time: Date.now(),
+          description
+        });
         port.setStore(store);
         private.handle.log(store.log);
       },
