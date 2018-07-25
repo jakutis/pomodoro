@@ -17,7 +17,7 @@ License: MIT
 
       log: (type, description) => {
         var store = port.getStore();
-        store.log.push({ type, time: port.getTime(), description });
+        store.log.push({ type, time: Date.now(), description });
         port.setStore(store);
         private.handle.log(store.log);
       },
@@ -26,7 +26,7 @@ License: MIT
         if (private.stoppedAt > 0) {
           currentTime = private.stoppedAt;
         } else {
-          currentTime = port.getTime();
+          currentTime = Date.now();
           if (currentTime < private.finishesAt) {
             port.onRender(() => private.tick());
           } else {
@@ -38,13 +38,13 @@ License: MIT
       },
       complete: () => {
         private.log('autocomplete');
-        private.stoppedAt = port.getTime();
+        private.stoppedAt = Date.now();
         private.log('acknowledge', port.getInput());
       },
       initializeTimes: () => {
         private.startedAt = 0;
-        private.stoppedAt = port.getTime();
-        private.finishesAt = port.getTime() + private.configuration.duration * 60 * 1000;
+        private.stoppedAt = Date.now();
+        private.finishesAt = Date.now() + private.configuration.duration * 60 * 1000;
       },
       handleTextSetter: setText => private.handle.text = setText,
       handleLog: setLog => private.handle.log = setLog,
@@ -68,9 +68,9 @@ License: MIT
         {
           name: 'start',
           run: () => {
-            private.startedAt = port.getTime();
+            private.startedAt = Date.now();
             private.stoppedAt = 0;
-            private.finishesAt = port.getTime() + private.configuration.duration * 60 * 1000;
+            private.finishesAt = Date.now() + private.configuration.duration * 60 * 1000;
             private.tick();
             private.log('start');
           }
@@ -78,7 +78,7 @@ License: MIT
         {
           name: 'stop',
           run: () => {
-            private.stoppedAt = port.getTime();
+            private.stoppedAt = Date.now();
             private.log('stop');
           }
         },
@@ -101,7 +101,6 @@ License: MIT
 
   var w = window;
   var {initialize, actions, handleTextSetter, handleLog} = new Domain({
-    getTime: () => Date.now(),
     onRender: f => w.requestAnimationFrame(f),
     getInput: () => (w.prompt('Would you describe what you did?') || '').trim() || undefined,
     getStore: () => {
