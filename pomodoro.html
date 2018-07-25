@@ -55,10 +55,10 @@ License: MIT
         ask();
       },
       complete: () => {
-        private.log('autocomplete');
+        private.log('complete');
         private.initializeTimes();
         private.tick();
-        private.getInput('Would you describe what you did?', input => private.log('acknowledge', input));
+        private.getInput('Would you describe what you did?', input => private.log('describe-complete', input));
       },
       initializeTimes: () => {
         private.startedAt = 0;
@@ -104,9 +104,10 @@ License: MIT
             if (private.stoppedAt > 0) {
               return;
             }
+            private.log('interrupt');
             private.initializeTimes();
             private.tick();
-            private.getInput('Would you describe what interrupted you?', input => private.log('interruption', input));
+            private.getInput('Would you describe what interrupted you?', input => private.log('describe-interrupt', input));
           }
         },
         {
