@@ -32,7 +32,9 @@ License: MIT
             port.onRender(() => private.tick());
           } else {
             currentTime = private.finishesAt;
-            private.complete();
+            private.log('complete');
+            private.initializeTimes();
+            private.getInput('Would you describe what you did?', input => private.log('describe-complete', input));
           }
         }
         private.handle.text(private.finishesAt - currentTime);
@@ -53,12 +55,6 @@ License: MIT
           });
         }
         ask();
-      },
-      complete: () => {
-        private.log('complete');
-        private.initializeTimes();
-        private.tick();
-        private.getInput('Would you describe what you did?', input => private.log('describe-complete', input));
       },
       initializeTimes: () => {
         private.startedAt = 0;
