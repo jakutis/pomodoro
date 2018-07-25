@@ -12,9 +12,9 @@
       configuration: null,
       handle: {},
 
-      log: (type, data) => {
+      log: (type, description) => {
         var store = port.getStore();
-        store.log.push({ type, time: port.getTime(), data });
+        store.log.push({ type, time: port.getTime(), description });
         port.setStore(store);
         private.handle.log(store.log);
       },
@@ -27,41 +27,22 @@
           if (currentTime < private.finishesAt) {
             port.onRender(() => private.tick());
           } else {
+            currentTime = private.finishesAt;
             private.complete();
           }
         }
         private.handle.text(private.finishesAt - currentTime);
       },
-      start: () => {
-        private.startedAt = port.getTime();
-        private.stoppedAt = 0;
-        private.finishesAt = port.getTime() + private.configuration.duration * 60 * 1000;
-        private.tick();
-        private.log('start');
-      },
-      stop: () => {
-        private.stoppedAt = port.getTime();
-        private.tick();
-        private.log('stop');
-      },
       complete: () => {
+        private.log('autocomplete');
         private.stoppedAt = port.getTime();
-        private.tick();
-        private.log('complete');
+        private.log('acknowledge', port.getInput());
       },
       initializeTimes: () => {
         private.startedAt = 0;
         private.stoppedAt = port.getTime();
         private.finishesAt = port.getTime() + private.configuration.duration * 60 * 1000;
       },
-      reset: () => {
-        private.initializeTimes();
-        private.tick();
-        private.log('reset');
-      }
-    };
-
-    Object.assign(this, {
       handleTextSetter: setText => private.handle.text = setText,
       handleLog: setLog => private.handle.log = setLog,
       initialize: () => {
@@ -83,27 +64,46 @@
       actions: [
         {
           name: 'start',
-          run: () => private.start()
+          run: () => {
+            private.startedAt = port.getTime();
+            private.stoppedAt = 0;
+            private.finishesAt = port.getTime() + private.configuration.duration * 60 * 1000;
+            private.tick();
+            private.log('start');
+          }
         },
         {
           name: 'stop',
-          run: () => private.stop()
+          run: () => {
+            private.stoppedAt = port.getTime();
+            private.log('stop');
+          }
         },
         {
           name: 'reset',
-          run: () => private.reset()
+          run: () => {
+            private.initializeTimes();
+            private.tick();
+            private.log('reset');
+          }
         }
       ]
-    });
+    };
+
+    this.handleTextSetter = private.handleTextSetter;
+    this.handleLog = private.handleLog;
+    this.initialize = private.initialize;
+    this.actions = private.actions;
   };
 
   var w = window;
   var {initialize, actions, handleTextSetter, handleLog} = new Domain({
     getTime: () => Date.now(),
+    onRender: f => w.requestAnimationFrame(f),
+    getInput: () => (w.prompt('Would you describe what you did?') || '').trim() || undefined,
     getStore: () => {
       return JSON.parse(w.localStorage.getItem('jakutis-pomodoro') || 'null');
     },
-    onRender: f => w.requestAnimationFrame(f),
     setStore: (store) => {
       return w.localStorage.setItem('jakutis-pomodoro', JSON.stringify(store));
     },
@@ -151,7 +151,7 @@
     items.forEach(i => {
       var iNode = w.document.createElement('li');
       var time = new Date(i.time).toISOString().replace('T', ' ').replace('Z', '');
-      var text = time.substr(0, time.length - 4) + ' ' + i.type;
+      var text = time.substr(0, time.length - 4) + ' ' + i.type + (i.description === undefined ? '' : ': ' + i.description);
       iNode.appendChild(w.document.createTextNode(text));
       log.appendChild(iNode);
     });
