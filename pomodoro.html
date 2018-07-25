@@ -3,7 +3,7 @@ Author: Vytautas Jakutis <vytautas@jakut.is> (https://jakut.is)
 License: MIT
 -->
 <html>
-  <body>
+  <body style="margin: 0">
     <div id="app"></div>
     <script>
 (function () {
@@ -167,11 +167,16 @@ License: MIT
   text.style.fontSize = '40vw';
   text.style.textAlign = 'center';
   text.style.margin = '0px';
+  text.style.lineHeight = '100%';
   root.appendChild(text);
   var toolbar = w.document.createElement('p');
   toolbar.style.textAlign = 'center';
+  toolbar.style.margin = '0px';
   root.appendChild(toolbar);
   var log = w.document.createElement('ul');
+  log.style.listStyle = 'none';
+  log.style.margin = '1vw 0px 0px 0px';
+  log.style.padding = '0px';
   root.appendChild(log);
 
   actions.forEach(a => {
@@ -179,8 +184,9 @@ License: MIT
     button.appendChild(w.document.createTextNode(a.name));
     button.onclick = () => a.run();
     button.style.fontSize = '10vw';
-    button.style.margin = '1vw';
+    button.style.margin = '0 1vw';
     button.style.padding = '2vw';
+    button.style.lineHeight = '100%';
     toolbar.appendChild(button);
   });
 
@@ -208,6 +214,8 @@ License: MIT
         iNode.style.backgroundColor = 'black';
         iNode.style.color = 'white';
       }
+      iNode.style.fontSize = '1vw';
+      iNode.style.padding = '0.3vw';
       iNode.appendChild(w.document.createTextNode(text));
       log.appendChild(iNode);
     });
