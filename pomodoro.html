@@ -37,17 +37,27 @@ License: MIT
         }
         private.handle.text(private.finishesAt - currentTime);
       },
-      getInput: question => {
-        var input;
-        while (input === undefined) {
-          input = port.getInput(question);
+      getInput: (question, handleInput) => {
+        var ask = () => {
+          port.setOverlay(true);
+          port.onRender(() => {
+            port.onLoop(() => {
+              var input = port.getInput(question);
+              if (input === undefined) {
+                ask();
+              } else {
+                port.setOverlay(false);
+                handleInput(input);
+              }
+            });
+          });
         }
-        return input;
+        ask();
       },
       complete: () => {
         private.log('autocomplete');
         private.stoppedAt = Date.now();
-        private.log('acknowledge', private.getInput('Would you describe what you did?'));
+        private.getInput('Would you describe what you did?', input => private.log('acknowledge', input));
       },
       initializeTimes: () => {
         private.startedAt = 0;
@@ -57,6 +67,7 @@ License: MIT
       handleTextSetter: setText => private.handle.text = setText,
       handleLog: setLog => private.handle.log = setLog,
       initialize: () => {
+        port.setOverlay(false);
         private.configuration = JSON.parse(port.getHash() || JSON.stringify({
           duration: 25
         }));
@@ -93,7 +104,7 @@ License: MIT
               return;
             }
             private.stoppedAt = Date.now();
-            private.log('interruption', private.getInput('Would you describe what interrupted you?'));
+            private.getInput('Would you describe what interrupted you?', input => private.log('interruption', input));
           }
         },
         {
@@ -128,8 +139,18 @@ License: MIT
   };
 
   var w = window;
+  var overlay = w.document.createElement('div');
+  overlay.style.display = 'none';
+  overlay.style.position = 'absolute';
+  overlay.style.height = '100%';
+  overlay.style.width = '100%';
+  overlay.style.top = '0px';
+  overlay.style.left = '0px';
+  overlay.style.backgroundColor = 'red';
+  w.document.body.appendChild(overlay);
   var {initialize, actions, id, handleTextSetter, handleLog} = new Domain({
     onRender: f => w.requestAnimationFrame(f),
+    onLoop: f => w.setTimeout(f),
     getInput: question => (w.prompt(question) || '').trim() || undefined,
     getStore: () => {
       return JSON.parse(w.localStorage.getItem('jakutis-pomodoro') || 'null');
@@ -138,7 +159,8 @@ License: MIT
       return w.localStorage.setItem('jakutis-pomodoro', JSON.stringify(store));
     },
     getHash: () => unescape(w.location.hash.substr(1)),
-    setHash: hash => w.location.hash = hash
+    setHash: hash => w.location.hash = hash,
+    setOverlay: enable => overlay.style.display = enable ? 'block' : 'none'
   });
   var root = w.document.getElementById('app');
   var text = w.document.createElement('p');
