@@ -45,21 +45,15 @@ License: MIT
         private.handle.text(private.finishesAt - currentTime);
       },
       getInput: (question, handleInput) => {
-        var ask = () => {
-          port.setOverlay(true);
-          port.onRender(() => {
-            port.onLoop(() => {
-              var input = port.getInput(question);
-              if (input === undefined) {
-                ask();
-              } else {
-                port.setOverlay(false);
-                handleInput(input);
-              }
-            });
-          });
-        }
-        ask();
+        port.setOverlay(true);
+        port.onRender(_ => port.onLoop(_ => {
+          var input;
+          while (input === undefined) {
+            input = port.getInput(question);
+          }
+          port.setOverlay(false);
+          handleInput(input);
+        }));
       },
       initializeTimes: () => {
         private.startedAt = 0;
