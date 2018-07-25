@@ -37,10 +37,17 @@ License: MIT
         }
         private.handle.text(private.finishesAt - currentTime);
       },
+      getInput: question => {
+        var input;
+        while (input === undefined) {
+          input = port.getInput(question);
+        }
+        return input;
+      },
       complete: () => {
         private.log('autocomplete');
         private.stoppedAt = Date.now();
-        private.log('acknowledge', port.getInput('Would you describe what you did?'));
+        private.log('acknowledge', private.getInput('Would you describe what you did?'));
       },
       initializeTimes: () => {
         private.startedAt = 0;
@@ -86,7 +93,7 @@ License: MIT
               return;
             }
             private.stoppedAt = Date.now();
-            private.log('interruption', port.getInput('Would you describe what interrupted you?'));
+            private.log('interruption', private.getInput('Would you describe what interrupted you?'));
           }
         },
         {
