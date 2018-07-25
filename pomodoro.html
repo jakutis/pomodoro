@@ -2,163 +2,164 @@
   <body>
     <div id="app"></div>
     <script>
-(function (w) {
-  var render = ({actions, handleTextSetter, handleLog}) => {
-    var app = w.document.getElementById('app');
-    var text = w.document.createElement('p');
-    text.style.fontSize = '40vw';
-    text.style.textAlign = 'center';
-    text.style.margin = '0px';
-    app.appendChild(text);
-    var toolbar = w.document.createElement('p');
-    toolbar.style.textAlign = 'center';
-    app.appendChild(toolbar);
-    var log = w.document.createElement('ul');
-    app.appendChild(log);
+(function () {
+  // TODO UI to show that I acknowledged end
+  var Domain = function (port) {
+    var private = {
+      startedAt: 0,
+      stoppedAt: 0,
+      finishesAt: 0,
+      configuration: null,
+      handle: {},
 
-    actions.forEach(a => {
-      var button = w.document.createElement('button');
-      button.appendChild(w.document.createTextNode(a.name));
-      button.onclick = () => a.run();
-      button.style.fontSize = '10vw';
-      button.style.margin = '2vw';
-      button.style.padding = '2vw';
-      toolbar.appendChild(button);
-    });
-
-    handleTextSetter(duration => {
-      while (text.firstChild) {
-        text.removeChild(text.firstChild);
+      log: (type, data) => {
+        var store = port.getStore();
+        store.log.push({ type, time: port.getTime(), data });
+        port.setStore(store);
+        private.handle.log(store.log);
+      },
+      tick: () => {
+        var currentTime;
+        if (private.stoppedAt > 0) {
+          currentTime = private.stoppedAt;
+        } else {
+          currentTime = port.getTime();
+          if (currentTime < private.finishesAt) {
+            port.onRender(() => private.tick());
+          } else {
+            private.complete();
+          }
+        }
+        private.handle.text(private.finishesAt - currentTime);
+      },
+      start: () => {
+        private.startedAt = port.getTime();
+        private.stoppedAt = 0;
+        private.finishesAt = port.getTime() + private.configuration.duration * 60 * 1000;
+        private.tick();
+        private.log('start');
+      },
+      stop: () => {
+        private.stoppedAt = port.getTime();
+        private.tick();
+        private.log('stop');
+      },
+      complete: () => {
+        private.stoppedAt = port.getTime();
+        private.tick();
+        private.log('complete');
+      },
+      initializeTimes: () => {
+        private.startedAt = 0;
+        private.stoppedAt = port.getTime();
+        private.finishesAt = port.getTime() + private.configuration.duration * 60 * 1000;
+      },
+      reset: () => {
+        private.initializeTimes();
+        private.tick();
+        private.log('reset');
       }
-      var seconds = Math.round(duration / 1000);
-      var minutes = Math.floor(seconds / 60);
-      seconds = seconds - minutes * 60;
-      var string = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
-      text.appendChild(w.document.createTextNode(string));
-    });
+    };
 
-    handleLog(items => {
-      while (log.firstChild) {
-        log.removeChild(log.firstChild);
-      }
-      items = items.slice().sort((a, b) => b.time - a.time);
-      items.forEach(i => {
-        var iNode = w.document.createElement('li');
-        var time = new Date(i.time).toISOString().replace('T', ' ').replace('Z', '');
-        var text = time.substr(0, time.length - 4) + ' ' + i.type;
-        iNode.appendChild(w.document.createTextNode(text));
-        log.appendChild(iNode);
-      });
+    Object.assign(this, {
+      handleTextSetter: setText => private.handle.text = setText,
+      handleLog: setLog => private.handle.log = setLog,
+      initialize: () => {
+        private.configuration = JSON.parse(port.getHash() || JSON.stringify({
+          duration: 25
+        }));
+        port.setHash(JSON.stringify(private.configuration));
+
+        var store = port.getStore() || {
+          log: []
+        };
+        port.setStore(store);
+
+        private.handle.log(store.log);
+        private.initializeTimes();
+        private.tick();
+        private.log('initialize');
+      },
+      actions: [
+        {
+          name: 'start',
+          run: () => private.start()
+        },
+        {
+          name: 'stop',
+          run: () => private.stop()
+        },
+        {
+          name: 'reset',
+          run: () => private.reset()
+        }
+      ]
     });
   };
 
-  var port = {
+  var w = window;
+  var {initialize, actions, handleTextSetter, handleLog} = new Domain({
     getTime: () => Date.now(),
     getStore: () => {
       return JSON.parse(w.localStorage.getItem('jakutis-pomodoro') || 'null');
     },
-    onRender: w.requestAnimationFrame,
+    onRender: f => w.requestAnimationFrame(f),
     setStore: (store) => {
       return w.localStorage.setItem('jakutis-pomodoro', JSON.stringify(store));
     },
     getHash: () => unescape(w.location.hash.substr(1)),
     setHash: hash => w.location.hash = hash
-  };
-
-  var domain = {
-    startedAt: 0,
-    stoppedAt: 0,
-    finishesAt: 0,
-    configuration: null,
-
-    initialize: () => {
-      domain.configuration = JSON.parse(port.getHash() || JSON.stringify({
-        duration: 25
-      }));
-      port.setHash(JSON.stringify(domain.configuration));
-
-      var store = port.getStore() || {
-        log: []
-      };
-      port.setStore(store);
-
-      domain.handle.log(store.log);
-      domain.initializeTimes();
-      domain.tick();
-      domain.log('initialize');
-    },
-    handle: {},
-    log: (type, data) => {
-      var store = port.getStore();
-      store.log.push({ type, time: port.getTime(), data });
-      port.setStore(store);
-      domain.handle.log(store.log);
-    },
-    tick: () => {
-      var currentTime;
-      if (domain.stoppedAt > 0) {
-        currentTime = domain.stoppedAt;
-      } else {
-        currentTime = port.getTime();
-        if (currentTime < domain.finishesAt) {
-          port.onRender(() => domain.tick());
-        } else {
-          domain.complete();
-        }
-      }
-      domain.handle.text(domain.finishesAt - currentTime);
-    },
-    start: () => {
-      domain.startedAt = port.getTime();
-      domain.stoppedAt = 0;
-      domain.finishesAt = port.getTime() + domain.configuration.duration * 60 * 1000;
-      domain.tick();
-      domain.log('start');
-    },
-    stop: () => {
-      domain.stoppedAt = port.getTime();
-      domain.tick();
-      domain.log('stop');
-    },
-    complete: () => {
-      domain.stoppedAt = port.getTime();
-      domain.tick();
-      domain.log('complete');
-    },
-    initializeTimes: () => {
-      domain.startedAt = 0;
-      domain.stoppedAt = port.getTime();
-      domain.finishesAt = port.getTime() + domain.configuration.duration * 60 * 1000;
-    },
-    reset: () => {
-      domain.initializeTimes();
-      domain.tick();
-      domain.log('reset');
-    }
-  };
-
-  // TODO UI to show that I acknowledged end
-  render({
-    handleTextSetter: setText => domain.handle.text = setText,
-    handleLog: setLog => domain.handle.log = setLog,
-    actions: [
-      {
-        name: 'start',
-        run: () => domain.start()
-      },
-      {
-        name: 'stop',
-        run: () => domain.stop()
-      },
-      {
-        name: 'reset',
-        run: () => domain.reset()
-      }
-    ]
   });
-  w.onhashchange = () => domain.initialize();
-  domain.initialize();
-})(window);
+  var root = w.document.getElementById('app');
+  var text = w.document.createElement('p');
+  text.style.fontSize = '40vw';
+  text.style.textAlign = 'center';
+  text.style.margin = '0px';
+  root.appendChild(text);
+  var toolbar = w.document.createElement('p');
+  toolbar.style.textAlign = 'center';
+  root.appendChild(toolbar);
+  var log = w.document.createElement('ul');
+  root.appendChild(log);
+
+  actions.forEach(a => {
+    var button = w.document.createElement('button');
+    button.appendChild(w.document.createTextNode(a.name));
+    button.onclick = () => a.run();
+    button.style.fontSize = '10vw';
+    button.style.margin = '2vw';
+    button.style.padding = '2vw';
+    toolbar.appendChild(button);
+  });
+
+  handleTextSetter(duration => {
+    while (text.firstChild) {
+      text.removeChild(text.firstChild);
+    }
+    var seconds = Math.round(duration / 1000);
+    var minutes = Math.floor(seconds / 60);
+    seconds = seconds - minutes * 60;
+    var string = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+    text.appendChild(w.document.createTextNode(string));
+  });
+
+  handleLog(items => {
+    while (log.firstChild) {
+      log.removeChild(log.firstChild);
+    }
+    items = items.slice().sort((a, b) => b.time - a.time);
+    items.forEach(i => {
+      var iNode = w.document.createElement('li');
+      var time = new Date(i.time).toISOString().replace('T', ' ').replace('Z', '');
+      var text = time.substr(0, time.length - 4) + ' ' + i.type;
+      iNode.appendChild(w.document.createTextNode(text));
+      log.appendChild(iNode);
+    });
+  });
+
+  w.onhashchange = () => initialize();
+  initialize();
+})();
     </script>
   </body>
 </html>
