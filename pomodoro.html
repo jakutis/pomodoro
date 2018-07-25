@@ -26,10 +26,14 @@
       toolbar.appendChild(button);
     });
 
-    handleTextSetter(string => {
+    handleTextSetter(duration => {
       while (text.firstChild) {
         text.removeChild(text.firstChild);
       }
+      var seconds = Math.round(duration / 1000);
+      var minutes = Math.floor(seconds / 60);
+      seconds = seconds - minutes * 60;
+      var string = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
       text.appendChild(w.document.createTextNode(string));
     });
 
@@ -89,10 +93,7 @@
           domain.complete();
         }
       }
-      var seconds = Math.round((domain.finishesAt - currentTime) / 1000);
-      var minutes = Math.floor(seconds / 60);
-      seconds = seconds - minutes * 60;
-      domain.handle.text((minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds);
+      domain.handle.text(domain.finishesAt - currentTime);
     },
     start: () => {
       domain.startedAt = Date.now();
