@@ -14,10 +14,11 @@ License: MIT
       finishesAt: 0,
       configuration: null,
       handle: {},
+      id: Date.now() + '-' + Math.random(),
 
       log: (type, description) => {
         var store = port.getStore();
-        store.log.push({ type, time: Date.now(), description });
+        store.log.push({ id: private.id, type, time: Date.now(), description });
         port.setStore(store);
         private.handle.log(store.log);
       },
@@ -97,10 +98,11 @@ License: MIT
     this.handleLog = private.handleLog;
     this.initialize = private.initialize;
     this.actions = private.actions;
+    this.id = private.id;
   };
 
   var w = window;
-  var {initialize, actions, handleTextSetter, handleLog} = new Domain({
+  var {initialize, actions, id, handleTextSetter, handleLog} = new Domain({
     onRender: f => w.requestAnimationFrame(f),
     getInput: () => (w.prompt('Would you describe what you did?') || '').trim() || undefined,
     getStore: () => {
@@ -154,6 +156,10 @@ License: MIT
       var iNode = w.document.createElement('li');
       var time = new Date(i.time).toISOString().replace('T', ' ').replace('Z', '');
       var text = time.substr(0, time.length - 4) + ' ' + i.type + (i.description === undefined ? '' : ': ' + i.description);
+      if (i.id === id) {
+        iNode.style.backgroundColor = 'black';
+        iNode.style.color = 'white';
+      }
       iNode.appendChild(w.document.createTextNode(text));
       log.appendChild(iNode);
     });
