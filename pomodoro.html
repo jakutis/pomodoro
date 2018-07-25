@@ -40,7 +40,7 @@ License: MIT
       complete: () => {
         private.log('autocomplete');
         private.stoppedAt = Date.now();
-        private.log('acknowledge', port.getInput());
+        private.log('acknowledge', port.getInput('Would you describe what you did?'));
       },
       initializeTimes: () => {
         private.startedAt = 0;
@@ -69,6 +69,9 @@ License: MIT
         {
           name: 'start',
           run: () => {
+            if (private.startedAt > 0) {
+              return;
+            }
             private.startedAt = Date.now();
             private.stoppedAt = 0;
             private.finishesAt = Date.now() + private.configuration.duration * 60 * 1000;
@@ -77,8 +80,21 @@ License: MIT
           }
         },
         {
+          name: '!',
+          run: () => {
+            if (private.stoppedAt > 0) {
+              return;
+            }
+            private.stoppedAt = Date.now();
+            private.log('interruption', port.getInput('Would you describe what interrupted you?'));
+          }
+        },
+        {
           name: 'stop',
           run: () => {
+            if (private.stoppedAt > 0) {
+              return;
+            }
             private.stoppedAt = Date.now();
             private.log('stop');
           }
@@ -86,6 +102,9 @@ License: MIT
         {
           name: 'reset',
           run: () => {
+            if (private.startedAt === 0 || private.stoppedAt === 0) {
+              return;
+            }
             private.initializeTimes();
             private.tick();
             private.log('reset');
@@ -104,7 +123,7 @@ License: MIT
   var w = window;
   var {initialize, actions, id, handleTextSetter, handleLog} = new Domain({
     onRender: f => w.requestAnimationFrame(f),
-    getInput: () => (w.prompt('Would you describe what you did?') || '').trim() || undefined,
+    getInput: question => (w.prompt(question) || '').trim() || undefined,
     getStore: () => {
       return JSON.parse(w.localStorage.getItem('jakutis-pomodoro') || 'null');
     },
@@ -131,7 +150,7 @@ License: MIT
     button.appendChild(w.document.createTextNode(a.name));
     button.onclick = () => a.run();
     button.style.fontSize = '10vw';
-    button.style.margin = '2vw';
+    button.style.margin = '1vw';
     button.style.padding = '2vw';
     toolbar.appendChild(button);
   });
