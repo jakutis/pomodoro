@@ -56,7 +56,8 @@ License: MIT
       },
       complete: () => {
         private.log('autocomplete');
-        private.stoppedAt = Date.now();
+        private.initializeTimes();
+        private.tick();
         private.getInput('Would you describe what you did?', input => private.log('acknowledge', input));
       },
       initializeTimes: () => {
@@ -103,29 +104,20 @@ License: MIT
             if (private.stoppedAt > 0) {
               return;
             }
-            private.stoppedAt = Date.now();
+            private.initializeTimes();
+            private.tick();
             private.getInput('Would you describe what interrupted you?', input => private.log('interruption', input));
           }
         },
         {
           name: 'stop',
           run: () => {
-            if (private.stoppedAt > 0) {
-              return;
-            }
-            private.stoppedAt = Date.now();
-            private.log('stop');
-          }
-        },
-        {
-          name: 'reset',
-          run: () => {
-            if (private.startedAt === 0 || private.stoppedAt === 0) {
+            if (private.startedAt === 0) {
               return;
             }
             private.initializeTimes();
             private.tick();
-            private.log('reset');
+            private.log('stop');
           }
         }
       ]
