@@ -94,7 +94,7 @@ License: MIT
           }
         },
         {
-          name: '!',
+          name: 'interruption',
           run: () => {
             if (private.stoppedAt > 0) {
               return;
@@ -103,17 +103,6 @@ License: MIT
             private.initializeTimes();
             private.tick();
             private.getInput('Would you describe what interrupted you?', input => private.log('describe-interrupt', input));
-          }
-        },
-        {
-          name: 'stop',
-          run: () => {
-            if (private.startedAt === 0) {
-              return;
-            }
-            private.initializeTimes();
-            private.tick();
-            private.log('stop');
           }
         }
       ]
