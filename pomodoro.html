@@ -34,7 +34,7 @@ License: MIT
         } else {
           currentTime = Date.now();
           if (currentTime < private.finishesAt) {
-            port.onRender(() => private.tick());
+            port.onLoop(() => private.tick());
           } else {
             currentTime = private.finishesAt;
             private.log('complete');
