@@ -175,6 +175,7 @@ License: MIT
     var minutes = Math.floor(seconds / 60);
     seconds = seconds - minutes * 60;
     var string = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+    w.document.title = string;
     text.appendChild(w.document.createTextNode(string));
   });
 
