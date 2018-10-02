@@ -36,8 +36,8 @@ License: MIT
           if (currentTime < private.finishesAt) {
             port.onLoop(() => private.tick());
           } else {
-            currentTime = private.finishesAt;
             private.log('complete');
+            currentTime = private.finishesAt;
             private.initializeTimes();
             private.getInput('Would you describe what you did?', input => private.log('describe-complete', input));
           }
