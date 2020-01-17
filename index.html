@@ -104,6 +104,12 @@ License: MIT
             private.tick();
             private.getInput('Would you describe what you did and what interrupted you?', input => private.log('describe-interrupt', input));
           }
+        },
+        {
+          name: 'fullscreen',
+          run: () => {
+            window.document.getElementById('app').requestFullscreen()
+          }
         }
       ]
     };
@@ -140,6 +146,8 @@ License: MIT
     setOverlay: enable => overlay.style.display = enable ? 'block' : 'none'
   });
   var root = w.document.getElementById('app');
+  root.style.background = 'white'
+  root.style.overflow = 'auto'
   var text = w.document.createElement('p');
   text.style.fontSize = '40vw';
   text.style.textAlign = 'center';
