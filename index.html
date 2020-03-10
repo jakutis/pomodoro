@@ -27,9 +27,14 @@ License: MIT
         port.setStore(store);
         private.handle.log(store.log);
       },
+      quit: () => {
+        private.log('quit')
+        return !private.isStopped()
+      },
+      isStopped: () => private.stoppedAt > 0,
       tick: () => {
         var currentTime;
-        if (private.stoppedAt > 0) {
+        if (private.isStopped()) {
           currentTime = private.stoppedAt;
         } else {
           currentTime = Date.now();
@@ -96,7 +101,7 @@ License: MIT
         {
           name: 'interruption',
           run: () => {
-            if (private.stoppedAt > 0) {
+            if (private.isStopped()) {
               return;
             }
             private.log('interrupt');
@@ -119,6 +124,7 @@ License: MIT
     this.initialize = private.initialize;
     this.actions = private.actions;
     this.id = private.id;
+    this.quit = private.quit;
   };
 
   var w = window;
@@ -131,7 +137,7 @@ License: MIT
   overlay.style.left = '0px';
   overlay.style.backgroundColor = 'red';
   w.document.body.appendChild(overlay);
-  var {initialize, actions, id, handleTextSetter, handleLog} = new Domain({
+  var {initialize, actions, id, handleTextSetter, handleLog, quit} = new Domain({
     onRender: f => w.requestAnimationFrame(f),
     onLoop: f => w.setTimeout(f),
     getInput: question => (w.prompt(question) || '').trim() || undefined,
@@ -208,6 +214,7 @@ License: MIT
   });
 
   w.onhashchange = () => initialize();
+  w.onbeforeunload = () => quit() ? true : undefined
   initialize();
 })();
     </script>
