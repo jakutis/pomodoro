@@ -139,7 +139,7 @@ License: MIT
   w.document.body.appendChild(overlay);
   var {initialize, actions, id, handleTextSetter, handleLog, quit} = new Domain({
     onRender: f => w.requestAnimationFrame(f),
-    onLoop: f => w.setTimeout(f),
+    onLoop: f => w.setTimeout(f, 1000),
     getInput: question => (w.prompt(question) || '').trim() || undefined,
     getStore: () => {
       return JSON.parse(w.localStorage.getItem('jakutis-pomodoro') || 'null');
